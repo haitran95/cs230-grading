@@ -64,9 +64,11 @@ def import_roster(file_path):
     # Coursera issues
     roster.remove('reetika@stanford.edu')
     roster.remove('selenas@stanford.edu')
+    # Missing for some reason (Added now)
+    roster += ['jangs7078@gmail.com']
+    roster += ['gabrielspil@outlook.com']
+    # Sort alphabetically
     roster.sort()
-    # Replacements
-
     return roster
 
 
@@ -88,36 +90,76 @@ class Coursera:
         # Course 1
         self.course1_file_path, self.course1_quiz_names, self.course1_assn_names = course1_info()
         self.course1_df = import_grades(self.course1_file_path, self.course1_quiz_names, self.course1_assn_names)
+        self.course1_df.fillna(0)
+        self.course1_quiz_names = ['Points Scored: ' + name for name in self.course1_quiz_names]
+        self.course1_assn_names = ['Points Scored: ' + name for name in self.course1_assn_names]
         # Course 2
         self.course2_file_path, self.course2_quiz_names, self.course2_assn_names = course2_info()
         self.course2_df = import_grades(self.course2_file_path, self.course2_quiz_names, self.course2_assn_names)
+        self.course2_df.fillna(0)
+        self.course2_quiz_names = ['Points Scored: ' + name for name in self.course2_quiz_names]
+        self.course2_assn_names = ['Points Scored: ' + name for name in self.course2_assn_names]
         # Course 3
         self.course3_file_path, self.course3_quiz_names, self.course3_assn_names = course3_info()
         self.course3_df = import_grades(self.course3_file_path, self.course3_quiz_names, self.course3_assn_names)
+        self.course3_df.fillna(0)
+        self.course3_quiz_names = ['Points Scored: ' + name for name in self.course3_quiz_names]
+        self.course3_assn_names = ['Points Scored: ' + name for name in self.course3_assn_names]
         # Course 4
         self.course4_file_path, self.course4_quiz_names, self.course4_assn_names = course4_info()
         self.course4_df = import_grades(self.course4_file_path, self.course4_quiz_names, self.course4_assn_names)
+        self.course4_df.fillna(0)
+        self.course4_quiz_names = ['Points Scored: ' + name for name in self.course4_quiz_names]
+        self.course4_assn_names = ['Points Scored: ' + name for name in self.course4_assn_names]
         # Course 5
         self.course5_file_path, self.course5_quiz_names, self.course5_assn_names = course5_info()
         self.course5_df = import_grades(self.course5_file_path, self.course5_quiz_names, self.course5_assn_names)
+        self.course5_df.fillna(0)
+        self.course5_quiz_names = ['Points Scored: ' + name for name in self.course5_quiz_names]
+        self.course5_assn_names = ['Points Scored: ' + name for name in self.course5_assn_names]
         # Grades
         self.grades = dict()
         for name in self.roster:
-            self.grades[name] = {'quiz': 0, 'prog_assn': 0, 'late_days': 0}
+            self.grades[name] = {'quiz': 0, 'assn': 0, 'late_days': 0}
         self.compute_grades(self.course1_df, self.course1_quiz_names, self.course1_assn_names)
         self.compute_grades(self.course2_df, self.course2_quiz_names, self.course2_assn_names)
         self.compute_grades(self.course3_df, self.course3_quiz_names, self.course3_assn_names)
         self.compute_grades(self.course4_df, self.course4_quiz_names, self.course4_assn_names)
         self.compute_grades(self.course5_df, self.course5_quiz_names, self.course5_assn_names)
+        # Normalize grades
+        max_quiz = 0
+        max_assn = 0
+        for name in self.roster:
+            if max_quiz < self.grades[name]['quiz']:
+                max_quiz = self.grades[name]['quiz']
+            if max_assn < self.grades[name]['assn']:
+                max_assn = self.grades[name]['assn']
+        for name in self.roster:
+            self.grades[name]['quiz'] /= max_quiz
+            self.grades[name]['assn'] /= max_assn
 
     def compute_grades(self, df, quiz_names, assn_names):
         for name in self.roster:
-            try:
-                print(name, df.loc[name])
-            except KeyError:
-                print(self.replacements[name], df.loc[self.replacements[name]])
+            quiz_total = 0
+            assn_total = 0
+            if name in list(self.replacements.keys()):
+                name = self.replacements[name]
+            for col in df.columns:
+                score = df.loc[name][col]
+                if isinstance(score, pd.Series):
+                    print(score)
+                if col in quiz_names:
+                    quiz_total += score
+                elif col in assn_names:
+                    assn_total += score
+            self.grades[name]['quiz'] += quiz_total
+            self.grades[name]['assn'] += assn_total
+
+    def export_grades(self):
+        for name in self.roster:
+            print(name, '| quiz total:', self.grades[name]['quiz'], '| assn total:', self.grades[name]['assn'])
 
 
 if __name__ == '__main__':
     coursera = Coursera()
-
+    coursera.export_grades()
