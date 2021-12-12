@@ -134,6 +134,9 @@ class Coursera:
                 max_quiz = self.grades[name]['quiz']
             if max_assn < self.grades[name]['assn']:
                 max_assn = self.grades[name]['assn']
+        # Not sure why but the max is twice the actual maximum (someone's coursera grade is double)
+        max_quiz /= 2
+        max_assn /= 2
         for name in self.roster:
             self.grades[name]['quiz'] /= max_quiz
             self.grades[name]['assn'] /= max_assn
@@ -147,7 +150,7 @@ class Coursera:
             for col in df.columns:
                 score = df.loc[name][col]
                 if isinstance(score, pd.Series):
-                    print(score)
+                    score = score.iloc[-1]
                 if col in quiz_names:
                     quiz_total += score
                 elif col in assn_names:
@@ -157,6 +160,10 @@ class Coursera:
 
     def export_grades(self):
         for name in self.roster:
+            if self.grades[name]['quiz'] > 1.0:
+                print('QUIZ SCORE ERROR:', name, self.grades[name]['quiz'])
+            if self.grades[name]['quiz'] > 1.0:
+                print('ASSN SCORE ERROR:', name, self.grades[name]['assn'])
             print(name, '| quiz total:', self.grades[name]['quiz'], '| assn total:', self.grades[name]['assn'])
 
 
